@@ -1,4 +1,9 @@
+final class HttpRequest implements Runnable {
 
-public class HttpRequest {
-
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
+	}
+	// . . .
 }
