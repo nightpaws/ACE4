@@ -34,14 +34,21 @@ final class HttpRequest implements Runnable {
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 		// Get the request line of the HTTP request message.
-		String requestLine = Something; //stuff needs to go here
+		String requestLine = br.readLine();
 		// Display the request line.
 		System.out.println();
 		System.out.println(requestLine);
 		
+		// Get and display the header lines.
+		String headerLine = null;
+		while ((headerLine = br.readLine()).length() != 0) {
+		 System.out.println(headerLine);
+		}
 		
-		
-		
+		// Close streams and socket.
+		os.close();
+		br.close();
+		socket.close();
 	
 	
 
