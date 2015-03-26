@@ -72,19 +72,18 @@ final class HttpRequest implements Runnable {
 		String contentTypeLine = null;
 		String entityBody = null;
 		if (fileExists) {
-			System.out.println("---- File Found ----");
-			statusLine = "HTTP/1.1 200 OK"; // edit
+			System.out.println("----File Found");
+			statusLine = "HTTP/1.1 200 OK";
 			contentTypeLine = "Content-type: " + contentType(fileName) + CRLF;
-			System.out.println("-------------------");
+			System.out.println("----200 Message Created");
 
 		} else {
-			System.out.println("---- File Not Found ----");
+			System.out.println("----Create 404 Message");
 			statusLine = "HTTP/1.1 404 Not Found"; // edit
 			contentTypeLine = "Content-type: text/html"+ CRLF;
-			entityBody = "<HTML>" + "<HEAD><TITLE>Not Found</TITLE></HEAD>"
-					+ "<BODY>Not Found</BODY></HTML>";
-			System.out.println("-------------------");
-
+			entityBody = "<HTML>" + "<HEAD><TITLE>ERROR!!!! 404!!!!!</TITLE></HEAD>"
+					+ "<BODY>NOTHING WORKS!</br></br> PANIC STATIONS!</br></br> It's a 404! Your page wasn't found!</BODY></HTML>";
+System.out.println("----404 Message created.----");
 		}
 
 		// Send the status line.
@@ -135,6 +134,4 @@ final class HttpRequest implements Runnable {
 			os.write(buffer, 0, bytes);
 		}
 	}
-
-	// . . .
 }
