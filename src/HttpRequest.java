@@ -109,6 +109,7 @@ System.out.println("----404 Message created.----");
 	}
 
 	private static String contentType(String fileName) {
+		fileName = fileName.toLowerCase();
 		if (fileName.endsWith(".htm") || fileName.endsWith(".html")) {
 			return "text/html";
 		}
