@@ -9,19 +9,20 @@ public final class WebServer {
 		int poolSize = 10;
 		// Establish the listen socket.
 		ServerSocket sock = new ServerSocket(port);
-//		ExecutorService executorService = Executors.newCachedThreadPool();
-		ExecutorService serverThreadPool = Executors.newFixedThreadPool(poolSize);
+		// ExecutorService executorService = Executors.newCachedThreadPool();
+		ExecutorService serverThreadPool = Executors
+				.newFixedThreadPool(poolSize);
 		System.out.println("Server is running!");
-		
+
 		// Process HTTP service requests in an infinite loop.
 		while (true) {
 			// Listen for a TCP connection request.
 			Socket client = sock.accept();
-//			executorService.execute(new Server(client));
+			// executorService.execute(new Server(client));
 			Thread thread = new Thread(new HttpRequest(client));
 			serverThreadPool.execute(thread);
 			// Code below here will not execute
 		}
-		
+
 	}
 }
