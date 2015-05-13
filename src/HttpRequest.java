@@ -78,12 +78,14 @@ final class HttpRequest implements Runnable {
 			System.out.println("----200 Message Created");
 
 		} else {
-			System.out.println("----Create 404 Message");
+			System.out
+					.println("----External Source not available... Output 404 instead.");
 			statusLine = "HTTP/1.1 404 Not Found"; // edit
-			contentTypeLine = "Content-type: text/html"+ CRLF;
-			entityBody = "<HTML>" + "<HEAD><TITLE>ERROR!!!! 404!!!!!</TITLE></HEAD>"
-					+ "<BODY>NOTHING WORKS!</br></br> PANIC STATIONS!</br></br> It's a 404! Your page wasn't found!</BODY></HTML>";
-System.out.println("----404 Message created.----");
+			contentTypeLine = "Content-type: text/html" + CRLF;
+			entityBody = "<HTML>"
+					+ "<HEAD><TITLE>ERROR - 404!</TITLE></HEAD>"
+					+ "<BODY>The page you were looking for could not be retrieved.</br></br> No cached copy exists, and the origin server either does not exist or isn't responding.</BODY></HTML>";
+			System.out.println("----404 Output given");
 		}
 
 		// Send the status line.
