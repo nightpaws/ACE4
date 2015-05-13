@@ -101,6 +101,7 @@ final class HttpRequest implements Runnable {
 			System.out.println("----File Not Found, Attempt to load.");
 
 			URL url = new URL(fileInput);
+			System.out.println("URL = " + fileInput);
 			HttpURLConnection connection = (HttpURLConnection) url
 					.openConnection();
 			HttpURLConnection.setFollowRedirects(true);
@@ -108,9 +109,11 @@ final class HttpRequest implements Runnable {
 			connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
 			String encoding = connection.getContentEncoding();
 			InputStream inStr = null;
-			Path out = Paths.get(strippedFInput);
-
-			//encoding checks before we get input. Set inStr equal to the result of the inputstream
+			Path out = Paths.get("~/Documents/workspace/ACE4/cache/"
+					+ strippedFInput);
+			System.out.println("Output path = " + out);
+			// encoding checks before we get input. Set inStr equal to the
+			// result of the inputstream
 			if (encoding != null && encoding.equalsIgnoreCase("gzip")) {
 				inStr = new GZIPInputStream(connection.getInputStream());
 			} else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
@@ -121,19 +124,24 @@ final class HttpRequest implements Runnable {
 			}
 
 			try {
-			//copy the contents of the input stream to the text file specified above.
-			Files.copy(inStr, out);
-			//Now set return values since we have the file.
-			statusLine = "HTTP/1.1 200 OK";
-			contentTypeLine = "Content-type: " + contentType(fileName) + CRLF;
-			
-			loaded = true;
-			System.out.println("----Attempted to load from external source");
+				// copy the contents of the input stream to the text file
+				// specified above.
+				System.out.println("writing file to localstore");
+				Files.copy(inStr, out);
+				System.out.println("Copied to local store");
+				// Now set return values since we have the file.
+				statusLine = "HTTP/1.1 200 OK";
+				contentTypeLine = "Content-type: " + contentType(fileName)
+						+ CRLF;
+
+				loaded = true;
+				System.out
+						.println("----Attempted to load from external source");
+			} catch (Exception e) {
+				System.out
+						.println("Exception Occurred trying to load the file");
+				e.printStackTrace();
 			}
-			catch (Exception e){
-			System.out.println("Exception Occurred trying to load the file");
-			}
-		
 
 			// return local 404 if page doesn't load/respond
 			if (!loaded) {
