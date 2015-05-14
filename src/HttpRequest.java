@@ -1,9 +1,11 @@
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -94,14 +96,15 @@ final class HttpRequest implements Runnable {
 
 			// file is external
 			System.out.println("FILE NOT CACHED. RETRIEVING FROM SERVER.");
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					url.openStream()));
-			BufferedWriter out = new BufferedWriter(new FileWriter(
-					file.getName()));
-			char[] cbuf = new char[255];
-			while ((in.read(cbuf)) != -1) {
-				out.write(cbuf);
+			InputStream in = new BufferedInputStream(url.openStream());
+			FileOutputStream out = new FileOutputStream(file.getName());
+			byte[] buf = new byte[1024];
+			int n = 0;
+
+			while (-1 != (n = in.read(buf))) {
+				out.write(buf, 0, n);
 			}
+
 			in.close();
 			out.close();
 			System.out.println("RETRIEVAL COMPLETED.");
@@ -166,27 +169,6 @@ final class HttpRequest implements Runnable {
 		socket.close();
 
 	}
-
-	// public void saveUrlToFile(File saveFile, String location) {
-	// URL url;
-	// try {
-	// url = new URL(location);
-	// BufferedReader in = new BufferedReader(new InputStreamReader(
-	// url.openStream()));
-	// BufferedWriter out = new BufferedWriter(new FileWriter(saveFile));
-	// char[] cbuf = new char[255];
-	// while ((in.read(cbuf)) != -1) {
-	// out.write(cbuf);
-	// }
-	// in.close();
-	// out.close();
-	//
-	// } catch (MalformedURLException e) {
-	// e.printStackTrace();
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// }
-	// }
 
 	private static String contentType(String fileName) {
 		fileName = fileName.toLowerCase();
