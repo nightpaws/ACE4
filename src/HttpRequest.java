@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URL;
 import java.util.StringTokenizer;
 
 final class HttpRequest implements Runnable {
@@ -54,9 +55,20 @@ final class HttpRequest implements Runnable {
 		StringTokenizer tokens = new StringTokenizer(requestLine);
 		tokens.nextToken(); // skip over the method, which should be "GET"
 		String fileName = tokens.nextToken();
+		URL url = new URL(fileName);
+		boolean local = false;
+		
+		if(url.getHost().equals("localhost")){
+			local = true;
+			fileName = url.getFile();
+		}
+		
 		// Prepend a "." so that file request is within the current directory.
 		fileName = "." + fileName;
+		System.out.println("filename is: " + fileName);
 
+
+		
 		// Open the requested file.
 		FileInputStream fis = null;
 		boolean fileExists = true;
