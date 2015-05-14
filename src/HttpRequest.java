@@ -1,7 +1,10 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -55,26 +58,67 @@ final class HttpRequest implements Runnable {
 		StringTokenizer tokens = new StringTokenizer(requestLine);
 		tokens.nextToken(); // skip over the method, which should be "GET"
 		String fileName = tokens.nextToken();
+		String workingDir = System.getProperty("user.dir");
 		URL url = new URL(fileName);
 		boolean local = false;
-		
-		if(url.getHost().equals("localhost")){
+
+		// Required for presence check=============================
+
+		String test = fileName.replace("http://", "");
+		test = workingDir + "\\" + test;
+		if (test.endsWith("/")) {
+			test = test.substring(0, test.length() - 1);
+		}
+		// System.out.println("TESTURL: " + test);
+		File file = new File(test);
+		// System.out.println("FILE IS SET TO ==" + file.toString());
+
+		// create directory structure needed for cache
+		// file.mkdirs();
+		// file.mkdir();
+
+		System.out.println("File Name is: " + file.getName());
+		// ========================================================
+
+		// Presence check==========================================
+		if (url.getHost().equals("localhost")) {
+			// File is stored on the local server. Just use the path
+			System.out.println("FILE IS LOCAL.");
 			local = true;
 			fileName = url.getFile();
+		} else if (ClassLoader.getSystemResource(file.getName()) != null) {
+			// file is cached
+			System.out.println("FILE IS CACHED!");
+		} else {
+			// not cached, file is external
+
+			// file is external
+			System.out.println("FILE NOT CACHED. RETRIEVING FROM SERVER.");
+			BufferedReader in = new BufferedReader(new InputStreamReader(
+					url.openStream()));
+			BufferedWriter out = new BufferedWriter(new FileWriter(
+					file.getName()));
+			char[] cbuf = new char[255];
+			while ((in.read(cbuf)) != -1) {
+				out.write(cbuf);
+			}
+			in.close();
+			out.close();
+			System.out.println("RETRIEVAL COMPLETED.");
+
 		}
-		
+		// ========================================================
+
 		// Prepend a "." so that file request is within the current directory.
 		fileName = "." + fileName;
-		System.out.println("filename is: " + fileName);
+		System.out.println("filename2 is: " + fileName);
 
-
-		
 		// Open the requested file.
 		FileInputStream fis = null;
 		boolean fileExists = true;
 
 		try {
-			fis = new FileInputStream(fileName);
+			fis = new FileInputStream(file.getName());
 		} catch (FileNotFoundException e) {
 			fileExists = false;
 		}
@@ -83,6 +127,7 @@ final class HttpRequest implements Runnable {
 		String statusLine = null;
 		String contentTypeLine = null;
 		String entityBody = null;
+
 		if (fileExists) {
 			System.out.println("----File Found");
 			statusLine = "HTTP/1.1 200 OK";
@@ -122,6 +167,27 @@ final class HttpRequest implements Runnable {
 
 	}
 
+	// public void saveUrlToFile(File saveFile, String location) {
+	// URL url;
+	// try {
+	// url = new URL(location);
+	// BufferedReader in = new BufferedReader(new InputStreamReader(
+	// url.openStream()));
+	// BufferedWriter out = new BufferedWriter(new FileWriter(saveFile));
+	// char[] cbuf = new char[255];
+	// while ((in.read(cbuf)) != -1) {
+	// out.write(cbuf);
+	// }
+	// in.close();
+	// out.close();
+	//
+	// } catch (MalformedURLException e) {
+	// e.printStackTrace();
+	// } catch (IOException e) {
+	// e.printStackTrace();
+	// }
+	// }
+
 	private static String contentType(String fileName) {
 		fileName = fileName.toLowerCase();
 		if (fileName.endsWith(".htm") || fileName.endsWith(".html")) {
@@ -136,6 +202,13 @@ final class HttpRequest implements Runnable {
 		if (fileName.endsWith("png")) {
 			return "image/png";
 		}
+		if (fileName.endsWith(".js")) {
+			return "application/javascript";
+		}
+		if (fileName.endsWith(".css")) {
+			return "text/css";
+		}
+
 		return "application/octet-stream";
 	}
 
