@@ -83,14 +83,20 @@ final class HttpRequest implements Runnable {
 		// ========================================================
 
 		// Presence check==========================================
+
+		System.out.println("TRYING FILE.GETNAME>>> " + file.getName());
+		
 		if (url.getHost().equals("localhost")) {
 			// File is stored on the local server. Just use the path
 			System.out.println("FILE IS LOCAL.");
 			local = true;
 			fileName = url.getFile();
-		} else if (ClassLoader.getSystemResource(file.getName()) != null) {
+
+		} else if ( file.exists() && !file.isDirectory()) {
 			// file is cached
 			System.out.println("FILE IS CACHED!");
+			fileName = file.getName();
+
 		} else {
 			// not cached, file is external
 
