@@ -67,7 +67,7 @@ final class HttpRequest implements Runnable {
 		// Required for presence check=============================
 
 		String test = fileName.replace("http://", "");
-		test = workingDir + "\\" + test;
+//		test = workingDir + "\\" + test;
 		if (test.endsWith("/")) {
 			test = test.substring(0, test.length() - 1);
 		}
