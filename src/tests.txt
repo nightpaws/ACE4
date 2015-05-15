@@ -1,0 +1,31 @@
+/* ==============================================================================
+ *
+ * Filename: test.txt
+ *
+ * Synopsis: A simple list of tests to carry out to ensure that the
+ * 			 server is running as expected 
+ *
+ * GitHub Repository: https://github.com/nightpaws/ACE4
+ *
+ * Author: Craig Morrison, Reg no: 201247913
+ *
+ *
+ * Promise: I confirm that this submission is all my own work.
+ *
+ * (Craig Morrison) __________________________________________
+ *
+ * Version: Full version history can be found on GitHub.
+ *
+ * =============================================================================*/
+ 
+Testing:
+
+1. After setting up the proxy in the browser of your choice the local webserver can be tested by
+ navigating to: localhost/bubbles.gif - Image should load as expected, view locally to compare.
+ 
+2. Testing web access: accessing bbc.co.uk should render the page correctly with images.
+
+3. Testing cache: By editing the file "bbc.co.uk" in the project source directory to alter
+  text displayed to your own preference should be displayed in browser if the page is reloaded.
+  It may be necessary to press cmd+shift+R or ctrl+shift+F5 to clear the browsers local cache
+   to ensure the caching of the web server is functional.
