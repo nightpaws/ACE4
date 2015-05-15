@@ -1,12 +1,31 @@
+/* ==============================================================================
+ *
+ * Filename: HttpRequest.java
+ *
+ * Synopsis: A caching proxy web server which works as a localhost web server
+ *  and caches local copies of external sites when they are requested. Should this
+ *   fail the class will output a 404.
+ *
+ * GitHub Repository: https://github.com/nightpaws/ACE4
+ *
+ * Author: Craig Morrison, Reg no: 201247913
+ *
+ *
+ * Promise: I confirm that this submission is all my own work.
+ *
+ * (Craig Morrison) __________________________________________
+ *
+ * Version: Full version history can be found on GitHub.
+ *
+ * =============================================================================*/
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -26,7 +45,6 @@ final class HttpRequest implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		try {
 			processRequest();
 		} catch (Exception e) {
@@ -34,13 +52,18 @@ final class HttpRequest implements Runnable {
 		}
 	}
 
+	/**
+	 * Takes the request from the socket provided and processes it, returning a
+	 * response based on whether the page is cached or not, and if it succeeds
+	 * at loading or not.
+	 * 
+	 * @throws Exception
+	 */
 	private void processRequest() throws Exception {
 		// Get a reference to the socket's input and output streams.
 		InputStream is = this.socket.getInputStream();
 		DataOutputStream os = new DataOutputStream(
 				this.socket.getOutputStream());
-		// Set up input stream filters.
-		// ?
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
@@ -60,39 +83,28 @@ final class HttpRequest implements Runnable {
 		StringTokenizer tokens = new StringTokenizer(requestLine);
 		tokens.nextToken(); // skip over the method, which should be "GET"
 		String fileName = tokens.nextToken();
-		String workingDir = System.getProperty("user.dir");
 		URL url = new URL(fileName);
-		boolean local = false;
 
 		// Required for presence check=============================
 
 		String test = fileName.replace("http://", "");
-//		test = workingDir + "\\" + test;
 		if (test.endsWith("/")) {
 			test = test.substring(0, test.length() - 1);
 		}
-		// System.out.println("TESTURL: " + test);
 		File file = new File(test);
-		// System.out.println("FILE IS SET TO ==" + file.toString());
-
-		// create directory structure needed for cache
-		// file.mkdirs();
-		// file.mkdir();
 
 		System.out.println("File Name is: " + file.getName());
-		// ========================================================
 
 		// Presence check==========================================
 
 		System.out.println("TRYING FILE.GETNAME>>> " + file.getName());
-		
+
 		if (url.getHost().equals("localhost")) {
 			// File is stored on the local server. Just use the path
 			System.out.println("FILE IS LOCAL.");
-			local = true;
 			fileName = url.getFile();
 
-		} else if ( file.exists() && !file.isDirectory()) {
+		} else if (file.exists() && !file.isDirectory()) {
 			// file is cached
 			System.out.println("FILE IS CACHED!");
 			fileName = file.getName();
@@ -138,12 +150,14 @@ final class HttpRequest implements Runnable {
 		String entityBody = null;
 
 		if (fileExists) {
+			// return 200 success
 			System.out.println("----File Found");
 			statusLine = "HTTP/1.1 200 OK";
 			contentTypeLine = "Content-type: " + contentType(fileName) + CRLF;
 			System.out.println("----200 Message Created");
 
 		} else {
+			// return 404 failure
 			System.out
 					.println("----External Source not available... Output 404 instead.");
 			statusLine = "HTTP/1.1 404 Not Found"; // edit
@@ -176,6 +190,12 @@ final class HttpRequest implements Runnable {
 
 	}
 
+	/**
+	 * 
+	 * @param fileName
+	 *            Name of file having it's extension checked
+	 * @return The MIME type of the file given as input
+	 */
 	private static String contentType(String fileName) {
 		fileName = fileName.toLowerCase();
 		if (fileName.endsWith(".htm") || fileName.endsWith(".html")) {
@@ -200,6 +220,16 @@ final class HttpRequest implements Runnable {
 		return "application/octet-stream";
 	}
 
+	/**
+	 * This method is used to write the file to be sent to the browser on
+	 * completion of processing the browsers request.
+	 * 
+	 * @param fis
+	 *            The file to be sent
+	 * @param os
+	 *            the written out version of the file
+	 * @throws Exception
+	 */
 	private static void sendBytes(FileInputStream fis, OutputStream os)
 			throws Exception {
 		// Construct a 1K buffer to hold bytes on their way to the socket.
