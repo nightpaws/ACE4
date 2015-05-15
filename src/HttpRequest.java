@@ -1,20 +1,37 @@
+/* ==============================================================================
+ *
+ * Filename: HttpRequest.java
+ *
+ * Synopsis: A caching proxy web server which works as a localhost web server
+ *  and caches local copies of external sites when they are requested. Should this
+ *   fail the class will output a 404.
+ *
+ * GitHub Repository: https://github.com/nightpaws/ACE4
+ *
+ * Author: Craig Morrison, Reg no: 201247913
+ *
+ *
+ * Promise: I confirm that this submission is all my own work.
+ *
+ * (Craig Morrison) __________________________________________
+ *
+ * Version: Full version history can be found on GitHub.
+ *
+ * =============================================================================*/
+
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.StringTokenizer;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 
 final class HttpRequest implements Runnable {
 
@@ -28,7 +45,6 @@ final class HttpRequest implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		try {
 			processRequest();
 		} catch (Exception e) {
@@ -36,51 +52,94 @@ final class HttpRequest implements Runnable {
 		}
 	}
 
+	/**
+	 * Takes the request from the socket provided and processes it, returning a
+	 * response based on whether the page is cached or not, and if it succeeds
+	 * at loading or not.
+	 * 
+	 * @throws Exception
+	 */
 	private void processRequest() throws Exception {
 		// Get a reference to the socket's input and output streams.
 		InputStream is = this.socket.getInputStream();
 		DataOutputStream os = new DataOutputStream(
 				this.socket.getOutputStream());
 
-		// Set up input stream filters.
-		// ?
-
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 		// Get the request line of the HTTP request message.
 		String requestLine = br.readLine();
-
 		// Display the request line.
 		System.out.println();
-		System.out.println("RequestLine: " + requestLine);
+		System.out.println(requestLine);
 
 		// Get and display the header lines.
 		String headerLine = null;
 		while ((headerLine = br.readLine()).length() != 0) {
-			System.out.println("HeaderLine: " + headerLine);
+			System.out.println(headerLine);
 		}
 
 		// Extract the filename from the request line.
 		StringTokenizer tokens = new StringTokenizer(requestLine);
 		tokens.nextToken(); // skip over the method, which should be "GET"
-		String fileInput = tokens.nextToken();
-		String fileName = fileInput;
+		String fileName = tokens.nextToken();
+		URL url = new URL(fileName);
 
-		String strippedFInput = null;
-		String strippedFName = null;
+		// Required for presence check=============================
+
+		String test = fileName.replace("http://", "");
+		if (test.endsWith("/")) {
+			test = test.substring(0, test.length() - 1);
+		}
+		File file = new File(test);
+
+		System.out.println("File Name is: " + file.getName());
+
+		// Presence check==========================================
+
+		System.out.println("TRYING FILE.GETNAME>>> " + file.getName());
+
+		if (url.getHost().equals("localhost")) {
+			// File is stored on the local server. Just use the path
+			System.out.println("FILE IS LOCAL.");
+			fileName = url.getFile();
+
+		} else if (file.exists() && !file.isDirectory()) {
+			// file is cached
+			System.out.println("FILE IS CACHED!");
+			fileName = file.getName();
+
+		} else {
+			// not cached, file is external
+
+			// file is external
+			System.out.println("FILE NOT CACHED. RETRIEVING FROM SERVER.");
+			InputStream in = new BufferedInputStream(url.openStream());
+			FileOutputStream out = new FileOutputStream(file.getName());
+			byte[] buf = new byte[1024];
+			int n = 0;
+
+			while (-1 != (n = in.read(buf))) {
+				out.write(buf, 0, n);
+			}
+
+			in.close();
+			out.close();
+			System.out.println("RETRIEVAL COMPLETED.");
+
+		}
+		// ========================================================
 
 		// Prepend a "." so that file request is within the current directory.
 		fileName = "." + fileName;
-
-		strippedFInput = fileInput.substring(6, fileInput.length() - 1);
-		strippedFName = fileName.substring(6, fileInput.length() - 1);
+		System.out.println("filename2 is: " + fileName);
 
 		// Open the requested file.
 		FileInputStream fis = null;
 		boolean fileExists = true;
 
 		try {
-			fis = new FileInputStream(fileName);// fileName
+			fis = new FileInputStream(file.getName());
 		} catch (FileNotFoundException e) {
 			fileExists = false;
 		}
@@ -89,71 +148,24 @@ final class HttpRequest implements Runnable {
 		String statusLine = null;
 		String contentTypeLine = null;
 		String entityBody = null;
-		if (fileExists) { // if cached
+
+		if (fileExists) {
+			// return 200 success
 			System.out.println("----File Found");
 			statusLine = "HTTP/1.1 200 OK";
 			contentTypeLine = "Content-type: " + contentType(fileName) + CRLF;
 			System.out.println("----200 Message Created");
 
 		} else {
-			// try to load from external
-			Boolean loaded = false;
-			System.out.println("----File Not Found, Attempt to load.");
-
-			URL url = new URL(fileInput);
-			System.out.println("URL = " + fileInput);
-			HttpURLConnection connection = (HttpURLConnection) url
-					.openConnection();
-			HttpURLConnection.setFollowRedirects(true);
-			// allow both GZip and Deflate (ZLib) encodings
-			connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
-			String encoding = connection.getContentEncoding();
-			InputStream inStr = null;
-			Path out = Paths.get("~/Documents/workspace/ACE4/cache/"
-					+ strippedFInput);
-			System.out.println("Output path = " + out);
-			// encoding checks before we get input. Set inStr equal to the
-			// result of the inputstream
-			if (encoding != null && encoding.equalsIgnoreCase("gzip")) {
-				inStr = new GZIPInputStream(connection.getInputStream());
-			} else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
-				inStr = new InflaterInputStream(connection.getInputStream(),
-						new Inflater(true));
-			} else {
-				inStr = connection.getInputStream();
-			}
-
-			try {
-				// copy the contents of the input stream to the text file
-				// specified above.
-				System.out.println("writing file to localstore");
-				Files.copy(inStr, out);
-				System.out.println("Copied to local store");
-				// Now set return values since we have the file.
-				statusLine = "HTTP/1.1 200 OK";
-				contentTypeLine = "Content-type: " + contentType(fileName)
-						+ CRLF;
-
-				loaded = true;
-				System.out
-						.println("----Attempted to load from external source");
-			} catch (Exception e) {
-				System.out
-						.println("Exception Occurred trying to load the file");
-				e.printStackTrace();
-			}
-
-			// return local 404 if page doesn't load/respond
-			if (!loaded) {
-				System.out
-						.println("----External Source not available... Output 404 instead.");
-				statusLine = "HTTP/1.1 404 Not Found"; // edit
-				contentTypeLine = "Content-type: text/html" + CRLF;
-				entityBody = "<HTML>"
-						+ "<HEAD><TITLE>ERROR - 404!</TITLE></HEAD>"
-						+ "<BODY>The page you were looking for could not be retrieved.</br></br> No cached copy exists, and the origin server either does not exist or isn't responding.</BODY></HTML>";
-				System.out.println("----404 Output given");
-			}
+			// return 404 failure
+			System.out
+					.println("----External Source not available... Output 404 instead.");
+			statusLine = "HTTP/1.1 404 Not Found"; // edit
+			contentTypeLine = "Content-type: text/html" + CRLF;
+			entityBody = "<HTML>"
+					+ "<HEAD><TITLE>ERROR - 404!</TITLE></HEAD>"
+					+ "<BODY>The page you were looking for could not be retrieved.</br></br> No cached copy exists, and the origin server either does not exist or isn't responding.</BODY></HTML>";
+			System.out.println("----404 Output given");
 		}
 
 		// Send the status line.
@@ -178,6 +190,12 @@ final class HttpRequest implements Runnable {
 
 	}
 
+	/**
+	 * 
+	 * @param fileName
+	 *            Name of file having it's extension checked
+	 * @return The MIME type of the file given as input
+	 */
 	private static String contentType(String fileName) {
 		fileName = fileName.toLowerCase();
 		if (fileName.endsWith(".htm") || fileName.endsWith(".html")) {
@@ -192,9 +210,26 @@ final class HttpRequest implements Runnable {
 		if (fileName.endsWith("png")) {
 			return "image/png";
 		}
+		if (fileName.endsWith(".js")) {
+			return "application/javascript";
+		}
+		if (fileName.endsWith(".css")) {
+			return "text/css";
+		}
+
 		return "application/octet-stream";
 	}
 
+	/**
+	 * This method is used to write the file to be sent to the browser on
+	 * completion of processing the browsers request.
+	 * 
+	 * @param fis
+	 *            The file to be sent
+	 * @param os
+	 *            the written out version of the file
+	 * @throws Exception
+	 */
 	private static void sendBytes(FileInputStream fis, OutputStream os)
 			throws Exception {
 		// Construct a 1K buffer to hold bytes on their way to the socket.
